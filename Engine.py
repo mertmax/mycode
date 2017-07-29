@@ -36,6 +36,7 @@ class Engine(object):
     def closePos(self):
         last = self.log.shape[0]-1
         self.log['closePrice'][last] = self.priceData.ix[self.t].h
+        self.log['closeTime'][last] = self.priceData.ix[self.t].time
         self.log['pnl'][last] = self.log['side'][last]*(
                 self.log['closePrice'][last] - self.log['openPrice'][last] ) 
         
@@ -45,6 +46,9 @@ class Engine(object):
             self.t = self.t+1
         else:
             self.hasNext = False 
+
+
+#test code
 
 raw_df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
 raw_df = raw_df[:10]
