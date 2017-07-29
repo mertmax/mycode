@@ -16,5 +16,6 @@ def readMT4data(filename):
     df[0] = [datetime.datetime.fromtimestamp(
             int(d/1000)
         ).strftime('%Y-%m-%d %H:%M:%S') for d in df[0]]
+    df.columns = ['time','h','l','o','c','v']
     return df;
 
