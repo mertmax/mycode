@@ -8,6 +8,10 @@ PaternDistribution
 """
 import itertools 
 import Utils
+import Engine as en
+
+termLen = 2
+patternLen = 2 
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
@@ -31,7 +35,7 @@ def convertTimeseries(df):
 def generateDistribution(string):
     terms = []
     tmp = ''
-    for i in itertools.product(itertools.product('ud','Vv'), repeat = 2):
+    for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
         for ii in i:
             tmp= tmp + ii[0]+ii[1]
         terms.append(tmp)
@@ -56,7 +60,50 @@ def distributionGivenFirstTerm(firstTerm, distribution):
         newDict[key] = value / total  
     return newDict
 
-df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
-string = convertTimeseries(df)
-distribution = generateDistribution(string)
-newDict = distributionGivenFirstTerm('uV',distribution)
+def suggestTrade(string,distribution):
+    newDist =  distributionGivenFirstTerm(
+            string[-termLen*(patternLen-1):], distribution) #feed the last realized terms as fisrst terms to get suggestion
+    print(string[-termLen*(patternLen-1):])
+    print(newDist)
+    buy = 0
+    sell = 0
+    for key, value in newDist.items():
+        if key.startswith('u'):
+            buy = buy + value
+        if key.startswith('d'):
+            sell = sell + value
+    total = sum(newDist.values())
+    buy = buy / total
+    sell = sell / total
+    if (buy>=sell):
+        print("Price increase with probability:",buy)
+        return 1 
+    else:
+        print("Price decrease with probability:",sell)
+        return -1
+    return 'error'
+    
+#df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
+#string = convertTimeseries(df)
+#distribution = generateDistribution(string)
+#sug = suggestTrade(string,distribution)
+
+raw_df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
+
+init_string = convertTimeseries(raw_df)
+init_distribution = generateDistribution(init_string)
+
+
+e = en.Engine(raw_df[['time','h','v']],364)
+
+while e.hasNext == True:
+    string = convertTimeseries(e.hist)
+    distribution = generateDistribution(string)
+    sug = suggestTrade(string,distribution)
+    
+    e.openPos()
+    e.next()
+    e.closePos()
+
+print(e.log)
+    
