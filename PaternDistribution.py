@@ -9,9 +9,10 @@ PaternDistribution
 import itertools 
 import Utils
 import Engine as en
+import numpy as np
 
 termLen = 2
-patternLen = 2 
+patternLen = 3 
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
@@ -25,7 +26,7 @@ def convertTimeseries(df):
         else:
             string = string + "d"
             
-        if df.v[index] > 60000:
+        if df.v[index] > df.v.mean()*0:
             string = string + "V"
         else:
             string = string + "v"
@@ -57,14 +58,17 @@ def distributionGivenFirstTerm(firstTerm, distribution):
             newDict[key[ftLen:]] = value
     total = sum(newDict.values())
     for key, value in newDict.items():
-        newDict[key] = value / total  
+        if total != 0:
+            newDict[key] = value / total  
+        else:
+            newDict[key] = 0  
     return newDict
 
 def suggestTrade(string,distribution):
     newDist =  distributionGivenFirstTerm(
             string[-termLen*(patternLen-1):], distribution) #feed the last realized terms as fisrst terms to get suggestion
-    print(string[-termLen*(patternLen-1):])
-    print(newDist)
+#    print(string[-termLen*(patternLen-1):])
+#    print(newDist)
     buy = 0
     sell = 0
     for key, value in newDist.items():
@@ -73,13 +77,21 @@ def suggestTrade(string,distribution):
         if key.startswith('d'):
             sell = sell + value
     total = sum(newDist.values())
-    buy = buy / total
-    sell = sell / total
-    if (buy>=sell):
-        print("Price increase with probability:",buy)
+    if total != 0:
+        buy = buy / total  
+    else:
+        buy = 0  
+
+    if total != 0:
+        sell = sell / total  
+    else:
+        sell = 0
+
+    if (buy>sell):
+        #print("Price increase with probability:",buy)
         return 1 
     else:
-        print("Price decrease with probability:",sell)
+        #print("Price decrease with probability:",sell)
         return -1
     return 'error'
     
@@ -88,22 +100,28 @@ def suggestTrade(string,distribution):
 #distribution = generateDistribution(string)
 #sug = suggestTrade(string,distribution)
 
-raw_df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
+raw_df = Utils.readMT4data("EURUSD-1440-HLOC-lag0-2017.08.06.csv")
+raw_df = raw_df[-2000:]
 
 init_string = convertTimeseries(raw_df)
 init_distribution = generateDistribution(init_string)
 
 
-e = en.Engine(raw_df[['time','h','v']],364)
+e = en.Engine(raw_df[['time','h','o','c','v']],1000)
 
-while e.hasNext == True:
+counter = 0
+while e.hasNext == True and counter < 100:
     string = convertTimeseries(e.hist)
     distribution = generateDistribution(string)
     sug = suggestTrade(string,distribution)
     
-    e.openPos()
+    e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
     e.next()
     e.closePos()
+    counter = counter + 1
 
 print(e.log)
+print(sum(e.log.pnl))
+print("Buy ratio: " +  str(e.log[e.log.side == 1].sum().side/e.log.shape[0]))
+print("Profit per trade: "+ str(e.log.pnl.sum()/e.log.shape[0]))
     
