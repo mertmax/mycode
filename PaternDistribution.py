@@ -9,10 +9,10 @@ PaternDistribution
 import itertools 
 import Utils
 import Engine as en
-import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 
 termLen = 2
-patternLen = 3 
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
@@ -33,7 +33,7 @@ def convertTimeseries(df):
     return string
 
 #generate patterns of categorical attributes and calculate probabilities for each
-def generateDistribution(string):
+def generateDistribution(string,patternLen):
     terms = []
     tmp = ''
     for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
@@ -64,7 +64,7 @@ def distributionGivenFirstTerm(firstTerm, distribution):
             newDict[key] = 0  
     return newDict
 
-def suggestTrade(string,distribution):
+def suggestTrade(string,distribution,patternLen):
     newDist =  distributionGivenFirstTerm(
             string[-termLen*(patternLen-1):], distribution) #feed the last realized terms as fisrst terms to get suggestion
 #    print(string[-termLen*(patternLen-1):])
@@ -100,28 +100,47 @@ def suggestTrade(string,distribution):
 #distribution = generateDistribution(string)
 #sug = suggestTrade(string,distribution)
 
-raw_df = Utils.readMT4data("EURUSD-1440-HLOC-lag0-2017.08.06.csv")
-raw_df = raw_df[-2000:]
+def test(datafile,startPos,histSize,testSize,patternLen):
+    raw_df = Utils.readMT4data(datafile)
+    raw_df = raw_df[startPos:]
 
-init_string = convertTimeseries(raw_df)
-init_distribution = generateDistribution(init_string)
-
-
-e = en.Engine(raw_df[['time','h','o','c','v']],1000)
-
-counter = 0
-while e.hasNext == True and counter < 100:
-    string = convertTimeseries(e.hist)
-    distribution = generateDistribution(string)
-    sug = suggestTrade(string,distribution)
+    #init_string = convertTimeseries(raw_df)
+    #init_distribution = generateDistribution(init_string,patternLen)
     
-    e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
-    e.next()
-    e.closePos()
-    counter = counter + 1
-
-print(e.log)
-print(sum(e.log.pnl))
-print("Buy ratio: " +  str(e.log[e.log.side == 1].sum().side/e.log.shape[0]))
-print("Profit per trade: "+ str(e.log.pnl.sum()/e.log.shape[0]))
     
+    e = en.Engine(raw_df[['time','h','o','c','v']],histSize)
+    
+    counter = 0
+    while e.hasNext == True and counter < testSize:
+        string = convertTimeseries(e.hist)
+        distribution = generateDistribution(string,patternLen)
+        sug = suggestTrade(string,distribution,patternLen)
+        
+        e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
+        e.next()
+        e.closePos()
+        counter = counter + 1
+    return e
+
+results = pd.DataFrame()
+for histSize in range(100,1201,100):
+    for patternLen in range(3,10,1):
+        e = test("USDTRY-1440-HLOC-lag0-2017.08.08.csv",-1270,histSize = histSize, testSize = 50, patternLen = patternLen )
+        ptr = e.log[e.log.pnl>0].shape[0]/e.log.shape[0]
+        print("History: " + str(histSize) +
+              " Pattern Lenght: " + str(patternLen)+ 
+              " Profitable trade ratio " + str(ptr))
+        new_result = pd.DataFrame([[histSize,patternLen,ptr]],columns = ["histSize","patternLen","ptr"])
+        results = results.append(new_result)
+
+#threedee = plt.figure().gca(projection='3d')
+#threedee.scatter(results.histSize,results.patternLen,results.ptr)
+
+#e = test("USDTRY-1440-HLOC-lag0-2017.08.08.csv",-1000,histSize = 200, testSize = 10, patternLen = 4)
+#
+#print(e.log)
+#print(sum(e.log.pnl))
+#print("Profitable trades % " + str(e.log[e.log.pnl>0].shape[0]/e.log.shape[0]))
+#print("Buy ratio: " +  str(e.log[e.log.side == 1].sum().side/e.log.shape[0]))
+#print("Profit per trade: "+ str(e.log.pnl.sum()/e.log.shape[0]))
+#plt.plot(e.log.pnl.cumsum())    
