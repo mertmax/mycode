@@ -122,16 +122,6 @@ def test(datafile,startPos,histSize,testSize,patternLen):
         counter = counter + 1
     return e
 
-results = pd.DataFrame()
-for histSize in range(100,1201,100):
-    for patternLen in range(3,10,1):
-        e = test("USDTRY-1440-HLOC-lag0-2017.08.08.csv",-1270,histSize = histSize, testSize = 50, patternLen = patternLen )
-        ptr = e.log[e.log.pnl>0].shape[0]/e.log.shape[0]
-        print("History: " + str(histSize) +
-              " Pattern Lenght: " + str(patternLen)+ 
-              " Profitable trade ratio " + str(ptr))
-        new_result = pd.DataFrame([[histSize,patternLen,ptr]],columns = ["histSize","patternLen","ptr"])
-        results = results.append(new_result)
 
 #threedee = plt.figure().gca(projection='3d')
 #threedee.scatter(results.histSize,results.patternLen,results.ptr)
