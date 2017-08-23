@@ -6,11 +6,8 @@ PaternDistribution
 
 @author: Efe
 """
-import itertools 
-import Utils
-import Engine as en
-import matplotlib.pyplot as plt
-import pandas as pd
+import itertools
+import Engine
 
 termLen = 2
 
@@ -18,15 +15,15 @@ termLen = 2
 def convertTimeseries(df):
     string = ''
     returns = df.h.diff()
-    for index, row in df.iterrows():
+    for index in range(0, df.shape[0]):
         if index == 0:
             continue
-        if returns.ix[index] >= 0:
+        if returns.values[index] >= 0: #reads from the array of data for speed
             string = string + "u"
         else:
             string = string + "d"
             
-        if df.v[index] > df.v.mean()*0:
+        if df.v.values[index] > 0: #reads from the array of data for speed
             string = string + "V"
         else:
             string = string + "v"
@@ -100,16 +97,8 @@ def suggestTrade(string,distribution,patternLen):
 #distribution = generateDistribution(string)
 #sug = suggestTrade(string,distribution)
 
-def test(datafile,startPos,histSize,testSize,patternLen):
-    raw_df = Utils.readMT4data(datafile)
-    raw_df = raw_df[startPos:]
-
-    #init_string = convertTimeseries(raw_df)
-    #init_distribution = generateDistribution(init_string,patternLen)
-    
-    
-    e = en.Engine(raw_df[['time','h','o','c','v']],histSize)
-    
+def test(data,histSize,testSize,patternLen):
+    e = Engine.Engine(data,histSize)
     counter = 0
     while e.hasNext == True and counter < testSize:
         string = convertTimeseries(e.hist)

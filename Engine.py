@@ -14,6 +14,7 @@ next: move onto next point in time and price, execute TP and SL, update account
 @author: Efe
 """
 import pandas as pd
+import datetime
 
 class Engine(object):
     log = pd.DataFrame(columns = ['openTime', 'side','openPrice', 'SL', 'TP',
@@ -32,22 +33,33 @@ class Engine(object):
         #side: 1 for buy, -1 for sell
 #        newTrade = pd.DataFrame([[self.priceData.ix[self.t].time,side,self.priceData.ix[self.t].o,0.0,0.0,0.0,0.0,0.0,comment]],[self.log.shape[0]], columns = ['openTime', 'side',
 #        'openPrice', 'SL', 'TP', 'closeTime', 'closePrice', 'pnl', 'comment']) #open at closing price of the period
-        newTrade = pd.DataFrame([[self.priceData.ix[self.t].time,side,self.priceData.ix[self.t].h,0.0,0.0,0.0,0.0,0.0,comment]],[self.log.shape[0]], columns = ['openTime', 'side',
+        newTrade = pd.DataFrame([[self.priceData.ix[self.t].time,side,self.priceData.ix[self.t].h,0.0,0.0,datetime.datetime(9999,12,31),0.0,0.0,comment]],[self.log.shape[0]], columns = ['openTime', 'side',
         'openPrice', 'SL', 'TP', 'closeTime', 'closePrice', 'pnl', 'comment']) #open at h price of the period
         self.log = self.log.append(newTrade)
         
     def closePos(self):
         last = self.log.shape[0]-1
         #self.log['closePrice'][last] = self.priceData.ix[self.t].c #close at closing price of the period
-        self.log['closePrice'][last] = self.priceData.ix[self.t].h #close at h price of the period
-        self.log['closeTime'][last] = self.priceData.ix[self.t].time
-        self.log['pnl'][last] = self.log['side'][last]*(
-                self.log['closePrice'][last] - self.log['openPrice'][last] ) 
+        closeprice= self.priceData.h[self.t]
+        self.log.set_value(last,'closePrice',closeprice)
+        #self.log['closePrice'][last] = closeprice #close at h price of the period
+        self.log.set_value(last,'closeTime',self.priceData.time[self.t])
+        #self.log['closeTime'][last] = self.priceData.time[self.t]
+        self.log.set_value(last,'pnl',self.log['side'][last]*(
+                closeprice - self.log['openPrice'][last]))
+        #self.log['pnl'][last] = self.log['side'][last]*(closeprice - self.log['openPrice'][last] ) 
         
     def next(self):
         
         if(self.t+1 < self.priceData.shape[0]):          
+            self.hist = self.hist[1:]
             self.hist = self.hist.append(self.priceData.ix[self.t], ignore_index=True)
             self.t = self.t+1
         else:
             self.hasNext = False
+            
+    def reportLog(self):
+        ptr = self.log[self.log.pnl>0].shape[0]/self.log.shape[0]
+        ppt = self.log.pnl.sum() /self.log.shape[0]
+        print("Profitable trade ratio " + str(ptr)+
+              " Avg. profit per trade " + str(ppt))
