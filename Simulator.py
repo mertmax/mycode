@@ -9,39 +9,68 @@ import PatternDistribution as pattern
 
 import pandas as pd
 
-def surfacePatternDistribution(data):
-    results = pd.DataFrame()
-    for histSize in range(10,121,20):
-        for patternLen in range(2,10,1):
-            e = pattern.test(data,histSize = histSize, testSize = 50, patternLen = patternLen )
-            ptr = e.log[e.log.pnl>0].shape[0]/e.log.shape[0]
-            print("History: " + str(histSize) +
-                  " Pattern Lenght: " + str(patternLen)+ 
-                  " Profitable trade ratio " + str(ptr))
-            new_result = pd.DataFrame([[histSize,patternLen,ptr]],columns = ["histSize","patternLen","ptr"])
-            results = results.append(new_result)
-    Utils.plot3d(results)
+def chooseModel(cvSet,histRange,patternLenRange):
+    perfomances = dict();
+    for histSize in histRange:
+        for patternLen in patternLenRange:
+            perf = 0
+            for index, row in cvSet.iterrows():
+                queryStr = "histSize == "+ str(histSize) +" and patternLen == "+ str(patternLen)
+                perfEffect = 0
+                if  row.results.query(queryStr).ptr.values[0] - 0.50 < 0:
+                    perfEffect = -2*(row.results.query(queryStr).ptr.values[0] - 0.50)**2
+                else:
+                    perfEffect = row.results.query(queryStr).ptr.values[0] - 0.50
+                perf = perf + perfEffect
+                
+            perfomances[(histSize,patternLen)] = perf
+    return perfomances
 
+def crossValidatePatternDistribution(allData,histRange, patternLenRange):
+    cvFold = 10
+    cvSet = pd.DataFrame(columns = ["data","results"])
+    dataSize = int((allData.shape[0] - allData.shape[0]%cvFold)/cvFold)
+    for i in range(0,cvFold,1):
+        data = allData[i*dataSize:(i+1)*dataSize]
+        results = evalPatternDistribution(data,histRange, patternLenRange)
+        newCv = pd.DataFrame([[data,results]],columns = ["data","results"])
+        cvSet =  cvSet.append(newCv)
+    cvSet.reset_index(drop=True, inplace=True)
+    return cvSet
+
+
+def evalPatternDistribution(data,histRange, patternLenRange, plotResults=False):
+    results = pd.DataFrame()
+    for histSize in histRange:
+        for patternLen in patternLenRange:
+            e, distribution, string, ptr, ppt = runPatternDistribution(data,
+                histSize = histSize, runPeriods = 20, patternLen = patternLen, printStats=True )
+            new_result = pd.DataFrame([[histSize,patternLen,ptr,ppt,e]],columns = ["histSize","patternLen","ptr","ppt","e"])
+            results = results.append(new_result)
+    results.reset_index(drop=True, inplace=True)
+    if plotResults:
+        Utils.plotHeatmap(results[['histSize','patternLen','ptr']])
     return results
 
-def runPatternDistribution(histSize,patternLen):
-    e = pattern.test("USDTRY-1440-HLOC-lag0-2017.08.08.csv",-1270,histSize = histSize, testSize = 50, patternLen = patternLen )
+def runPatternDistribution(data,histSize,patternLen,runPeriods,printStats = False):
+    e, distribution, string = pattern.run(data,histSize = histSize, runPeriods = runPeriods, patternLen = patternLen )
     ptr = e.log[e.log.pnl>0].shape[0]/e.log.shape[0]
     ppt = e.log.pnl.sum() /e.log.shape[0]
-    print("History: " + str(histSize) +
-      " Pattern length: " + str(patternLen)+ 
-      " Profitable trade ratio " + str(ptr)+
-      " Avg. profit per trade " + str(ppt))
-    return e.log
-
-datafile  = "USDTRY-1440-HLOC-lag0-2017.08.08.csv"
-histSize = 500
-data = Utils.readMT4data(datafile, 99999)
-
-results =surfacePatternDistribution(data)
-
-#e = pattern.test(e,data,histSize, testSize = 50, patternLen = 5 )
-#e.reportLog()
+    if printStats:   
+        print("History: " + str(histSize) +
+          " Pattern length: " + str(patternLen)+ 
+          " Profitable trade ratio " + "{0:.2f}".format(ptr)+
+          " Avg. profit per trade " + "{0:.4f}".format(ppt))
+    return e, distribution, string, ptr, ppt
 
 
+#datafile  = "USDTRY-1440-HLOC-lag0-2017.08.08.csv"
+#data = Utils.readMT4data(datafile, 1000)
+
+datafile  = "C:\\Users\\max\\Google Drive\\Thesis\\Data\\Investing.csv"
+data = Utils.readInvData(datafile)
+histRange = (10, 20, 40, 80, 160, 250) #range(8,308,100)
+patternLenRange = range(2,6,1)
+cvSet= crossValidatePatternDistribution(data,histRange, patternLenRange)
+modelPerf= chooseModel(cvSet,histRange,patternLenRange)
 

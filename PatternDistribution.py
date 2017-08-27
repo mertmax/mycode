@@ -8,22 +8,36 @@ PaternDistribution
 """
 import itertools
 import Engine
+import statistics
 
 termLen = 2
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
     string = ''
-    returns = df.h.diff()
+        
+    returns = df.tPrice.diff()
+        
     for index in range(0, df.shape[0]):
         if index == 0:
             continue
         if returns.values[index] >= 0: #reads from the array of data for speed
-            string = string + "u"
+            if returns.values[index] > 0: # statistics.median(returns[returns>0].values):
+                string = string + "U"
+            else:
+                string = string + "u"
         else:
-            string = string + "d"
-            
-        if df.v.values[index] > 0: #reads from the array of data for speed
+            if returns.values[index] < 0: #statistics.median(returns[returns>0].values): #returns[returns<0].median():
+                string = string + "D"
+            else:
+                string = string + "d"
+#        if returns.values[index] >= 0: #reads from the array of data for speed
+#            string = string + "u"
+#        else:
+#            string = string + "d"
+#
+#            
+        if df.range.values[index] > 0: #df.range.median(): reads from the array of data for speed
             string = string + "V"
         else:
             string = string + "v"
@@ -33,7 +47,8 @@ def convertTimeseries(df):
 def generateDistribution(string,patternLen):
     terms = []
     tmp = ''
-    for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
+#    for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
+    for i in itertools.product(itertools.product('udUD','V'), repeat = patternLen):
         for ii in i:
             tmp= tmp + ii[0]+ii[1]
         terms.append(tmp)
@@ -69,9 +84,9 @@ def suggestTrade(string,distribution,patternLen):
     buy = 0
     sell = 0
     for key, value in newDist.items():
-        if key.startswith('u'):
+        if key.startswith('u') or key.startswith('U'):
             buy = buy + value
-        if key.startswith('d'):
+        if key.startswith('d') or key.startswith('D'):
             sell = sell + value
     total = sum(newDist.values())
     if total != 0:
@@ -97,10 +112,10 @@ def suggestTrade(string,distribution,patternLen):
 #distribution = generateDistribution(string)
 #sug = suggestTrade(string,distribution)
 
-def test(data,histSize,testSize,patternLen):
+def run(data,histSize,runPeriods,patternLen):
     e = Engine.Engine(data,histSize)
     counter = 0
-    while e.hasNext == True and counter < testSize:
+    while e.hasNext == True and counter < runPeriods:
         string = convertTimeseries(e.hist)
         distribution = generateDistribution(string,patternLen)
         sug = suggestTrade(string,distribution,patternLen)
@@ -109,7 +124,7 @@ def test(data,histSize,testSize,patternLen):
         e.next()
         e.closePos()
         counter = counter + 1
-    return e
+    return e, distribution, string
 
 
 #threedee = plt.figure().gca(projection='3d')
