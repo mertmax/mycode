@@ -35,6 +35,7 @@ def readInvData(filename, noOfLines=1000000): #Function to read Investing.com da
     if (noOfLines < df.shape[0]):
         df = df[:noOfLines] #get the latest number of lines specified
     df = df.reindex(index=df.index[::-1])
+    df.reset_index(drop=True,inplace=True)
 #    df[0] = [datetime.datetime.fromtimestamp(
 #            int(d/1000)
 #        ).strftime('%Y-%m-%d %H:%M:%S') for d in df[0]]
@@ -45,6 +46,25 @@ def readInvData(filename, noOfLines=1000000): #Function to read Investing.com da
     
     df = df.assign(range=df.h-df.l) #calculate range per period
     df = df.assign(tPrice = (df.h + df.l + df.c) / 3) #calculate typical price
+    
+    return df;
+
+def readBTCdata(filename, noOfLines=1000000): #Function to read bitcoincharts.com
+    df = pd.read_csv(filename, delimiter=";", header=None)
+    
+    if (noOfLines < df.shape[0]):
+        df = df[:noOfLines] #get the latest number of lines specified
+#    df[0] = [datetime.datetime.fromtimestamp(
+#            int(d/1000)
+#        ).strftime('%Y-%m-%d %H:%M:%S') for d in df[0]]
+    
+    df[0] = [datetime.datetime.strptime(d, "%d.%m.%Y %H:%M") for d in df[0]]
+    
+    df.columns = ['time','o','h','l','c','vBTC','vUSD','tPrice']
+    # Timestamp	Open	High	Low	Close	Volume (BTC)	Volume (Currency)	Weighted Price
+    
+    df = df.assign(range=df.h-df.l) #calculate range per period
+    
     
     return df;
 
@@ -65,6 +85,9 @@ def plotHeatmap(results):
     fig, ax = plt.subplots(figsize=(results.shape[0],5)) 
     sns.heatmap(heatmapdata, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
 
-
+def plotPerfHeatmap(modelPerf):
+    df = modelPerf.pivot(index='patternLen', columns='histSize', values = 'perf')
+    sns.heatmap(df, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
+    
 
 

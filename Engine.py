@@ -32,7 +32,7 @@ class Engine(object):
     def openPos(self,side,comment = ""):
         #side: 1 for buy, -1 for sell
         newTrade = pd.DataFrame([[self.priceData.ix[self.t].time, side, self.priceData.ix[self.t].tPrice ,0.0,0.0,datetime.datetime(9999,12,31),0.0,0.0,comment]],[self.log.shape[0]], columns = ['openTime', 'side',
-        'openPrice', 'SL', 'TP', 'closeTime', 'closePrice', 'pnl', 'comment']) #open at h price of the period
+        'openPrice', 'SL', 'TP', 'closeTime', 'closePrice', 'pnl', 'comment']) #open at tPrice of the period
         self.log = self.log.append(newTrade)
         
     def closePos(self):

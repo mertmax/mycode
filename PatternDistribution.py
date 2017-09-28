@@ -10,37 +10,21 @@ import itertools
 import Engine
 import statistics
 
-termLen = 2
+termLen = 1
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
     string = ''
         
-    returns = df.tPrice.diff()
+    returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
         
     for index in range(0, df.shape[0]):
         if index == 0:
             continue
         if returns.values[index] >= 0: #reads from the array of data for speed
-            if returns.values[index] > 0: # statistics.median(returns[returns>0].values):
-                string = string + "U"
-            else:
-                string = string + "u"
+            string = string + "u"
         else:
-            if returns.values[index] < 0: #statistics.median(returns[returns>0].values): #returns[returns<0].median():
-                string = string + "D"
-            else:
-                string = string + "d"
-#        if returns.values[index] >= 0: #reads from the array of data for speed
-#            string = string + "u"
-#        else:
-#            string = string + "d"
-#
-#            
-        if df.range.values[index] > 0: #df.range.median(): reads from the array of data for speed
-            string = string + "V"
-        else:
-            string = string + "v"
+            string = string + "d"
     return string
 
 #generate patterns of categorical attributes and calculate probabilities for each
@@ -48,9 +32,14 @@ def generateDistribution(string,patternLen):
     terms = []
     tmp = ''
 #    for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
-    for i in itertools.product(itertools.product('udUD','V'), repeat = patternLen):
+#    for i in itertools.product(itertools.product('udUD','V'), repeat = patternLen):
+#        for ii in i:
+#            tmp= tmp + ii[0]+ii[1]
+#        terms.append(tmp)
+#        tmp = ''     
+    for i in itertools.product(itertools.product('ud'), repeat = patternLen):
         for ii in i:
-            tmp= tmp + ii[0]+ii[1]
+            tmp= tmp + ii[0]
         terms.append(tmp)
         tmp = ''  
     distribution = dict()
