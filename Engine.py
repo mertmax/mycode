@@ -32,10 +32,10 @@ class Engine(object):
         tPrice = self.priceData[self.t][6] #self.priceData.ix[self.t].tPrice
         o =  self.priceData[self.t][2]
         atr = sum([row[5] for row in self.priceData])/len(self.priceData)
-        tp = o + side*atr/1
-        sl = o - side*atr/1
+        tp = o + side*atr/4
+        sl = o - side*atr/8
 #       [0 'openTime', 1 'side', 2 'openPrice', 3 'SL', 4 'TP', 5 'closeTime', 6 'closePrice', 7 'pnl', 8 'comment']) #open at tPrice of the period    
-        self.log.append([self.priceData[self.t][0], side, o ,sl,tp,datetime.datetime(9999,12,31),0.0,0.0,comment])
+        self.log.append([self.priceData[self.t][0].strftime("%d.%m.%Y"), side, o ,sl,tp,datetime.datetime(9999,12,31).strftime("%d.%m.%Y"),0.0,0.0,comment])
         
     def closePos(self):
         openPrice = self.log[-1][2]
@@ -55,7 +55,7 @@ class Engine(object):
             self.log[-1][6] = close
         
         self.log[-1][7] = side * (self.log[-1][6] - openPrice)
-        self.log[-1][5] = self.priceData[self.t][0]
+        self.log[-1][5] = self.priceData[self.t][0].strftime("%d.%m.%Y")
 
         
     def next(self):

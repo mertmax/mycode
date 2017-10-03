@@ -72,13 +72,14 @@ def runPatternDistribution(data,histSize,patternLen,runPeriods,printStats = Fals
 #data = Utils.readInvData(datafile)
 
 datafile  = r"C:\Investing.csv"
-data = Utils.readInvData(datafile,200)
+data = Utils.readInvData(datafile,100000)
+data = data [:100]
 
 #datafile = "C:\\Users\\max\\Google Drive\\Thesis\\Data\\BTC_HOURLY_OHLC.csv"
 #data = Utils.readBTCdata(datafile)
 
-histRange = (10,20,30,40)
-patternLenRange = (3, 4, 5, 6,7,8)
+histRange = (15, 20, 30, 40, 50)
+patternLenRange = (3, 4, 5, 6,7,8,9,10)
 cvFold = 1
 cvSet= crossValidatePatternDistribution(data,histRange, patternLenRange,cvFold)
 modelPerf= evaluatePerfomance(cvSet,histRange,patternLenRange)

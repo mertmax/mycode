@@ -107,7 +107,8 @@ def run(data,histSize,runPeriods,patternLen):
         string = convertTimeseries(e.hist)
         distribution = generateDistribution(string,patternLen)
         sug = suggestTrade(string,distribution,patternLen)
-        sug = random.sample([-1,1],1)[0]
+#        sug = random.sample([-1,1],1)[0]
+        sug = 1
         e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
         e.next()
         e.closePos()

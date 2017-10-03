@@ -89,5 +89,8 @@ def plotPerfHeatmap(modelPerf):
     df = modelPerf.pivot(index='patternLen', columns='histSize', values = 'perf')
     sns.heatmap(df, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
     
-
-
+def printlog(data):
+    i = 1
+    for row in data:
+        print("%3d" % i, row[0],"%2d " % (row[1]),"%1.5f" % row[2],"%1.5f" % row[3],"%1.5f" % row[4], row[5],"%1.5f" % row[6],"% 1.5f" % row[7],row[8])
+        i = i + 1
