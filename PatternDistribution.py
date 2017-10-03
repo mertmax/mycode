@@ -6,9 +6,10 @@ PaternDistribution
 
 @author: Efe
 """
+import numpy
 import itertools
 import Engine
-import statistics
+import random
 
 termLen = 1
 
@@ -16,12 +17,10 @@ termLen = 1
 def convertTimeseries(df):
     string = ''
         
-    returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
-        
-    for index in range(0, df.shape[0]):
-        if index == 0:
-            continue
-        if returns.values[index] >= 0: #reads from the array of data for speed
+    #returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
+    returns = numpy.diff([row[6] for row in df])         
+    for index in range(0, len(returns)):
+        if returns[index] >= 0:
             string = string + "u"
         else:
             string = string + "d"
@@ -88,13 +87,13 @@ def suggestTrade(string,distribution,patternLen):
     else:
         sell = 0
 
-    if (buy>sell):
+    if (buy>=sell):
         #print("Price increase with probability:",buy)
         return 1 
     else:
         #print("Price decrease with probability:",sell)
         return -1
-    return 'error'
+
     
 #df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
 #string = convertTimeseries(df)
@@ -108,7 +107,7 @@ def run(data,histSize,runPeriods,patternLen):
         string = convertTimeseries(e.hist)
         distribution = generateDistribution(string,patternLen)
         sug = suggestTrade(string,distribution,patternLen)
-        
+        sug = random.sample([-1,1],1)[0]
         e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
         e.next()
         e.closePos()
