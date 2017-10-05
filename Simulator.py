@@ -10,6 +10,7 @@ import PatternDistribution as pattern
 import pandas as pd
 
 def testLimitParams(allData,slLevels, tpLevels):
+#    incomplete implementation
     testRes = pd.DataFrame()
     newRes = evalPatternDistribution(data,histRange, patternLenRange, slLevels = slLevels, tpLevels = tpLevels )
     testRes.append(newRes)
@@ -72,14 +73,14 @@ def runPatternDistribution(data,histSize,patternLen,runPeriods,printStats = Fals
 #data = Utils.readInvData(datafile)
 
 datafile  = r"C:\Investing.csv"
-data = Utils.readInvData(datafile,100000)
-data = data [:100]
+data = Utils.readInvData(datafile )  #262
+
 
 #datafile = "C:\\Users\\max\\Google Drive\\Thesis\\Data\\BTC_HOURLY_OHLC.csv"
 #data = Utils.readBTCdata(datafile)
 
-histRange = (15, 20, 30, 40, 50)
-patternLenRange = (3, 4, 5, 6,7,8,9,10)
+histRange = (300, 350)
+patternLenRange = (6, 7, 8, 9)
 cvFold = 1
 cvSet= crossValidatePatternDistribution(data,histRange, patternLenRange,cvFold)
 modelPerf= evaluatePerfomance(cvSet,histRange,patternLenRange)

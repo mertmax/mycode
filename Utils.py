@@ -12,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import seaborn as sns; sns.set()
+import matplotlib.pyplot as plt
 
 def readMT4data(filename, noOfLines):
 
@@ -84,6 +85,7 @@ def plotHeatmap(results):
     heatmapdata = results.groupby(['histSize','patternLen']).sum().unstack('patternLen')
     fig, ax = plt.subplots(figsize=(results.shape[0],5)) 
     sns.heatmap(heatmapdata, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
+
 
 def plotPerfHeatmap(modelPerf):
     df = modelPerf.pivot(index='patternLen', columns='histSize', values = 'perf')

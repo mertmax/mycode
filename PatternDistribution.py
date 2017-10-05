@@ -108,13 +108,30 @@ def run(data,histSize,runPeriods,patternLen):
         distribution = generateDistribution(string,patternLen)
         sug = suggestTrade(string,distribution,patternLen)
 #        sug = random.sample([-1,1],1)[0]
-        sug = 1
+#        sug = 1
         e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
         e.next()
         e.closePos()
         counter = counter + 1
     return e, distribution, string
 
+def runBuy(data,histSize,runPeriods=5000):
+    e = Engine.Engine(data,histSize)
+    counter = 0
+    while e.hasNext == True and counter < runPeriods:
+        sug = 1
+        e.openPos(side = sug, comment="")
+        e.next()
+        e.closePos()
+        counter = counter + 1
+    
+    ptr = len([elem for elem in e.log if elem[7] > 0])/len(e.log) #count profitable trades and divide by total num of trades
+    #ppt = (e.log.pnl/e.log.openPrice).sum() /e.log.shape[0]
+    ppt = sum([row[7]/row[2] for row in e.log]) / len(e.log)
+    print("History: " + str(histSize) +
+          " Profitable trade ratio " + "{0:.4f}".format(ptr)+
+          " Avg. % profit per trade " + "{0:.6f}".format(ppt))
+    
 
 #threedee = plt.figure().gca(projection='3d')
 #threedee.scatter(results.histSize,results.patternLen,results.ptr)
