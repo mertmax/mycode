@@ -12,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import seaborn as sns; sns.set()
+import matplotlib.pyplot as plt
 
 def readMT4data(filename, noOfLines):
 
@@ -64,8 +65,6 @@ def readBTCdata(filename, noOfLines=1000000): #Function to read bitcoincharts.co
     # Timestamp	Open	High	Low	Close	Volume (BTC)	Volume (Currency)	Weighted Price
     
     df = df.assign(range=df.h-df.l) #calculate range per period
-    
-    
     return df;
 
 
@@ -85,9 +84,14 @@ def plotHeatmap(results):
     fig, ax = plt.subplots(figsize=(results.shape[0],5)) 
     sns.heatmap(heatmapdata, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
 
+
 def plotPerfHeatmap(modelPerf):
+    plt.figure()
     df = modelPerf.pivot(index='patternLen', columns='histSize', values = 'perf')
     sns.heatmap(df, annot=True, square=True, cmap = 'RdYlGn', center = 0.5, cbar = False)
     
-
-
+def printlog(data):
+    i = 1
+    for row in data:
+        print("%3d" % i, row[0],"%2d " % (row[1]),"%1.5f" % row[2],"%1.5f" % row[3],"%1.5f" % row[4], row[5],"%1.5f" % row[6],"% 1.5f" % row[7],row[8])
+        i = i + 1

@@ -6,9 +6,10 @@ PaternDistribution
 
 @author: Efe
 """
+import numpy
 import itertools
 import Engine
-import statistics
+import random
 
 termLen = 1
 
@@ -16,12 +17,10 @@ termLen = 1
 def convertTimeseries(df):
     string = ''
         
-    returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
-        
-    for index in range(0, df.shape[0]):
-        if index == 0:
-            continue
-        if returns.values[index] >= 0: #reads from the array of data for speed
+    #returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
+    returns = numpy.diff([row[6] for row in df])         
+    for index in range(0, len(returns)):
+        if returns[index] >= 0:
             string = string + "u"
         else:
             string = string + "d"
@@ -88,33 +87,49 @@ def suggestTrade(string,distribution,patternLen):
     else:
         sell = 0
 
-    if (buy>sell):
+    if (buy>=sell):
         #print("Price increase with probability:",buy)
         return 1 
     else:
         #print("Price decrease with probability:",sell)
         return -1
-    return 'error'
+
     
 #df = Utils.readMT4data("USDTRY-1440-HLOC-lag0.csv")
 #string = convertTimeseries(df)
 #distribution = generateDistribution(string)
 #sug = suggestTrade(string,distribution)
 
-def run(data,histSize,runPeriods,patternLen):
-    e = Engine.Engine(data,histSize)
+def run(data,histSize,runPeriods,patternLen,maxHistLen):
+    e = Engine.Engine(data,histSize,maxHistLen)
     counter = 0
     while e.hasNext == True and counter < runPeriods:
         string = convertTimeseries(e.hist)
         distribution = generateDistribution(string,patternLen)
         sug = suggestTrade(string,distribution,patternLen)
-        
+#        sug = random.sample([-1,1],1)[0]
+#        sug = 1
         e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
         e.next()
         e.closePos()
         counter = counter + 1
     return e, distribution, string
 
+def runBuy(data,histSize,maxHistLen, runPeriods=5000):
+    e = Engine.Engine(data,histSize,maxHistLen)
+    counter = 0
+    while e.hasNext == True and counter < runPeriods:
+        sug = 1
+        e.openPos(side = sug, comment="")
+        e.next()
+        e.closePos()
+        counter = counter + 1
+    ptr = e.getPTR()
+    ppt = e.getPPT()
+    print("Buy Only: History: " + "{0:3.0f}".format(histSize) +
+      " PTR: " + "{0:.3f}".format(ptr)+
+      " PPT: %" + "{0: .2f}".format(ppt*100))
+    return e
 
 #threedee = plt.figure().gca(projection='3d')
 #threedee.scatter(results.histSize,results.patternLen,results.ptr)
