@@ -9,15 +9,13 @@ PaternDistribution
 import numpy
 import itertools
 import Engine
-import random
-
-termLen = 1
+import Utils
+import re
 
 #represent timeseries with categorical attributes
 def convertTimeseries(df):
     string = ''
         
-    #returns = df.tPrice.diff()/df.tPrice #returns are calculated as a ration
     returns = numpy.diff([row[6] for row in df])         
     for index in range(0, len(returns)):
         if returns[index] >= 0:
@@ -27,7 +25,7 @@ def convertTimeseries(df):
     return string
 
 #generate patterns of categorical attributes and calculate probabilities for each
-def generateDistribution(string,patternLen):
+def generateDistribution(string,patternLen, normalized = True):
     terms = []
     tmp = ''
 #    for i in itertools.product(itertools.product('ud','Vv'), repeat = patternLen):
@@ -43,11 +41,16 @@ def generateDistribution(string,patternLen):
         tmp = ''  
     distribution = dict()
     for t in terms:
-        distribution[t] = string.count(t)
+        distribution[t] = countOverlapping(string,t)
     total = sum(distribution.values())
-    for key, value in distribution.items():
-        distribution[key] = value / total
+    if normalized:
+        for key, value in distribution.items():
+            distribution[key] = value / total
     return distribution
+
+#Funtion to count overlapping ocuurences of substring in string. Built in fun. counts non overlapping
+def countOverlapping(s, sub_s):
+    return sum(1 for m in re.finditer('(?=%s)' % sub_s, s))
 
 #re-calculate probabilities given part of the pattern has been observed
 def distributionGivenFirstTerm(firstTerm, distribution):
@@ -66,7 +69,7 @@ def distributionGivenFirstTerm(firstTerm, distribution):
 
 def suggestTrade(string,distribution,patternLen):
     newDist =  distributionGivenFirstTerm(
-            string[-termLen*(patternLen-1):], distribution) #feed the last realized terms as fisrst terms to get suggestion
+            string[-patternLen+1:], distribution) #feed the last realized terms as fisrst terms to get suggestion
 #    print(string[-termLen*(patternLen-1):])
 #    print(newDist)
     buy = 0
@@ -109,7 +112,7 @@ def run(data,histSize,runPeriods,patternLen,maxHistLen):
         sug = suggestTrade(string,distribution,patternLen)
 #        sug = random.sample([-1,1],1)[0]
 #        sug = 1
-        e.openPos(side = sug, comment=string[-termLen*(patternLen-1):])
+        e.openPos(side = sug, comment=string[-patternLen+1:])
         e.next()
         e.closePos()
         counter = counter + 1
@@ -130,6 +133,17 @@ def runBuy(data,histSize,maxHistLen, runPeriods=5000):
       " PTR: " + "{0:.3f}".format(ptr)+
       " PPT: %" + "{0: .2f}".format(ppt*100))
     return e
+
+def getSuggestedTrade(data, histSize, patternLen):
+    e = Engine.Engine(data,histSize,histSize)
+    while e.hasNext == True:
+        e.next()
+    string = convertTimeseries(e.hist)
+    distribution = generateDistribution(string,patternLen)
+    sug = suggestTrade(string,distribution,patternLen)
+    e.openPos(side = sug, comment=string[-patternLen+1:])
+    Utils.printlog(e.log)
+    return string
 
 #threedee = plt.figure().gca(projection='3d')
 #threedee.scatter(results.histSize,results.patternLen,results.ptr)

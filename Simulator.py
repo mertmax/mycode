@@ -66,11 +66,12 @@ histRange = (20, 50, 100, 150, 200)
 patternLenRange = (3, 4, 5, 6)
 
 datafile  = r"C:\Investing.csv"
+datafile  = r"C:\Users\max\Google Drive\Thesis\Investing.csv"
 filedata = Utils.readInvData(datafile)
-alldata = filedata[:-300]
-alldata = alldata[-(max(histRange)+2*100):]  #262
-data = alldata[:-100]
-valData = alldata[-(max(histRange)+100):]
+alldata = filedata
+alldata = alldata[-(max(histRange)+2*50):]  #262
+data = alldata[:-50]
+valData = alldata[-(max(histRange)+50):]
 
 #datafile = "C:\\Users\\max\\Google Drive\\Thesis\\Data\\BTC_HOURLY_OHLC.csv"
 #data = Utils.readBTCdata(datafile)

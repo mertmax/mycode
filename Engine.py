@@ -33,8 +33,8 @@ class Engine(object):
 #        tPrice = self.priceData[self.t][6] #self.priceData.ix[self.t].tPrice
         o =  self.priceData[self.t][2]
         atr = sum([row[5] for row in self.hist[-15:]])/len(self.hist[-15:])
-        tp = o + side*atr/4
-        sl = o - side*atr/8
+        tp = o + side*atr/2
+        sl = o - side*atr/4
 #       [0 'openTime', 1 'side', 2 'openPrice', 3 'SL', 4 'TP', 5 'closeTime', 6 'closePrice', 7 'pnl', 8 'comment']) #open at tPrice of the period    
         self.log.append([self.priceData[self.t][0].strftime("%d.%m.%Y"), side, o ,sl,tp,datetime.datetime(9999,12,31).strftime("%d.%m.%Y"),0.0,0.0,comment])
         
